@@ -6,17 +6,22 @@
   <title>Exchange Risk Monitor 2026</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <style>
-    .twitter-timeline { border-radius: 16px; }
-  </style>
 </head>
 <body class="bg-gray-950 text-gray-200">
   <div class="max-w-7xl mx-auto p-6">
 
-    <h1 class="text-4xl font-bold text-center mb-2 text-yellow-400">Exchange Risk Monitor</h1>
-    <p class="text-center text-gray-400 mb-10">BitMart • LBank • CoinEx • HTX</p>
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-4xl font-bold text-yellow-400">Exchange Risk Monitor</h1>
+        <p class="text-gray-400">BitMart • LBank • CoinEx • HTX</p>
+      </div>
+      <button onclick="refreshAll()" 
+              class="bg-yellow-600 hover:bg-yellow-500 px-5 py-3 rounded-xl font-medium flex items-center gap-2 transition">
+        <i class="fas fa-sync-alt"></i> Refresh Semua Data
+      </button>
+    </div>
 
-    <!-- Volume -->
+    <!-- Volume Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12" id="exchange-grid"></div>
 
     <!-- Announcements -->
@@ -26,29 +31,51 @@
     </div>
 
     <!-- Twitter Embeds -->
-    <div class="mt-12">
-      <h2 class="text-2xl font-semibold mb-8 flex items-center gap-3">
-        <i class="fab fa-x-twitter"></i> Latest Posts from Official X Accounts
-      </h2>
+    <div>
+      <h2 class="text-2xl font-semibold mb-8">🐦 Latest Posts from Official X</h2>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" id="twitter-grid"></div>
     </div>
   </div>
 
   <script>
-    // Volume (sederhana)
+    const exchanges = [
+      { name: "BitMart", cg_id: "bitmart" },
+      { name: "LBank", cg_id: "lbank" },
+      { name: "CoinEx", cg_id: "coinex" },
+      { name: "HTX", cg_id: "huobi" }
+    ];
+
     async function loadVolumes() {
       const grid = document.getElementById('exchange-grid');
-      const names = ["BitMart", "LBank", "CoinEx", "HTX"];
-      grid.innerHTML = names.map(name => `
-        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-yellow-500 transition">
-          <h3 class="text-2xl font-bold">${name}</h3>
-          <p class="text-gray-400 text-sm mt-4">24h Volume</p>
-          <p class="text-3xl font-mono font-bold text-green-400 mt-1">Loading...</p>
-        </div>
-      `).join('');
+      grid.innerHTML = '';
+
+      for (let ex of exchanges) {
+        let volumeText = "Loading...";
+        
+        try {
+          const res = await fetch(`https://api.coingecko.com/api/v3/exchanges/${ex.cg_id}`);
+          if (res.ok) {
+            const data = await res.json();
+            const vol = data.trade_volume_24h_btc ? data.trade_volume_24h_btc.toFixed(2) : "N/A";
+            volumeText = `${vol} BTC`;
+          } else {
+            volumeText = "N/A";
+          }
+        } catch (e) {
+          volumeText = "Error";
+        }
+
+        const card = document.createElement('div');
+        card.className = "bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-yellow-500 transition";
+        card.innerHTML = `
+          <h3 class="text-2xl font-bold">${ex.name}</h3>
+          <p class="text-gray-400 text-sm mt-4">24h Trading Volume</p>
+          <p class="text-3xl font-mono font-bold text-green-400 mt-1">${volumeText}</p>
+        `;
+        grid.appendChild(card);
+      }
     }
 
-    // Announcements
     function loadAnnouncements() {
       const items = [
         { name: "BitMart", url: "https://www.bitmart.com/en-US/support/sections/7923014477723/45161617183387" },
@@ -59,42 +86,44 @@
 
       document.getElementById('announcement-grid').innerHTML = items.map(i => `
         <a href="${i.url}" target="_blank" class="block bg-gray-900 border border-gray-800 hover:border-red-500 rounded-2xl p-6 transition">
-          <h4 class="font-bold text-lg">${i.name}</h4>
-          <p class="text-sm text-gray-400 mt-1">Official Announcements & Delisting</p>
+          <h4 class="font-bold">${i.name}</h4>
+          <p class="text-sm text-gray-400">Official Announcements & Delisting</p>
         </a>
       `).join('');
     }
 
-    // Twitter Embeds
     function loadTwitterEmbeds() {
       const accounts = [
-        { name: "BitMart", username: "BitMartExchange" },
-        { name: "LBank", username: "LBank_Exchange" },
-        { name: "CoinEx", username: "coinexcom" },
-        { name: "HTX", username: "HTX_Global" }
+        { name: "BitMart", user: "BitMartExchange" },
+        { name: "LBank", user: "LBank_Exchange" },
+        { name: "CoinEx", user: "coinexcom" },
+        { name: "HTX", user: "HTX_Global" }
       ];
 
-      const container = document.getElementById('twitter-grid');
-      container.innerHTML = accounts.map(acc => `
+      document.getElementById('twitter-grid').innerHTML = accounts.map(acc => `
         <div class="bg-gray-900 border border-gray-800 rounded-3xl p-6">
-          <h4 class="font-bold text-lg mb-4">@${acc.username}</h4>
+          <h4 class="font-bold mb-4">@${acc.user}</h4>
           <a class="twitter-timeline" 
-             href="https://twitter.com/${acc.username}" 
-             data-height="600" 
+             href="https://twitter.com/${acc.user}" 
+             data-height="620" 
              data-theme="dark" 
-             data-chrome="noheader nofooter noborders transparent">
+             data-chrome="noheader nofooter transparent">
           </a>
         </div>
       `).join('');
 
-      // Load Twitter Widget Script
       const script = document.createElement('script');
       script.src = "https://platform.twitter.com/widgets.js";
       script.async = true;
       document.body.appendChild(script);
     }
 
-    // Initialize
+    function refreshAll() {
+      document.getElementById('exchange-grid').innerHTML = '<p class="text-center col-span-4 py-8 text-yellow-400">Refreshing data...</p>';
+      loadVolumes();
+    }
+
+    // Load semua
     window.onload = () => {
       loadVolumes();
       loadAnnouncements();
