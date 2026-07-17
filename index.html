@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exchange Risk Monitor 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .card { transition: all 0.3s; }
+    .card:hover { transform: translateY(-4px); border-color: rgb(234 179 8); }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-200">
+  <div class="max-w-7xl mx-auto p-6">
+    <h1 class="text-4xl font-bold text-center mb-2 text-yellow-400">
+      <i class="fas fa-shield-alt"></i> Exchange Risk Monitor
+    </h1>
+    <p class="text-center text-gray-400 mb-10">BitMart • LBank • CoinEx • HTX</p>
+
+    <!-- Exchange Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="exchange-grid"></div>
+
+    <!-- News & Delisting -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2">
+        <i class="fas fa-newspaper"></i> Latest News & Delisting
+      </h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="news-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const exchanges = [
+      { name: "BitMart", symbol: "bitmart" },
+      { name: "LBank", symbol: "lbank" },
+      { name: "CoinEx", symbol: "coinex" },
+      { name: "HTX", symbol: "htx" }
+    ];
+
+    async function getVolume() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/exchanges');
+        const data = await res.json();
+        
+        const grid = document.getElementById('exchange-grid');
+        grid.innerHTML = '';
+
+        exchanges.forEach(ex => {
+          const exData = data.find(e => e.id === ex.symbol) || { trade_volume_24h_btc: 0 };
+          const volume = (exData.trade_volume_24h_btc || 0).toFixed(0);
+
+          const card = document.createElement('div');
+          card.className = `bg-gray-900 border border-gray-800 rounded-2xl p-6 card`;
+          card.innerHTML = `
+            <div class="flex justify-between items-start">
+              <h3 class="text-2xl font-bold">${ex.name}</h3>
+              <span class="text-xs bg-yellow-900 text-yellow-400 px-3 py-1 rounded-full">Monitoring</span>
+            </div>
+            <div class="mt-6">
+              <p class="text-gray-400 text-sm">24h Volume (BTC)</p>
+              <p class="text-3xl font-mono font-bold text-green-400">${volume} BTC</p>
+            </div>
+            <div class="mt-4 text-xs text-gray-500">
+              Update otomatis • CoinGecko
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.log("Gagal ambil data volume");
+      }
+    }
+
+    // News Placeholder (bisa diganti RSS nanti)
+    function loadNews() {
+      const newsHTML = `
+        <div class="bg-gray-900 rounded-2xl p-6">
+          <h4 class="font-semibold mb-4 text-lg">🛎️ News Terbaru</h4>
+          <ul class="space-y-4 text-sm">
+            <li class="border-l-4 border-yellow-500 pl-4">
+              <strong>BitMart:</strong> Volume turun 15% minggu ini<br>
+              <span class="text-gray-500 text-xs">2 jam lalu</span>
+            </li>
+            <li class="border-l-4 border-red-500 pl-4">
+              <strong>LBank:</strong> Beberapa token kecil di-delist<br>
+              <span class="text-gray-500 text-xs">1 hari lalu</span>
+            </li>
+            <li class="border-l-4 border-yellow-500 pl-4">
+              <strong>HTX:</strong> Fokus recovery derivatif setelah penurunan volume<br>
+              <span class="text-gray-500 text-xs">3 hari lalu</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="bg-gray-900 rounded-2xl p-6">
+          <h4 class="font-semibold mb-4 text-lg text-red-400">⚠️ Delisting Watch</h4>
+          <ul class="space-y-3 text-sm">
+            <li>• LBank: Beberapa low-cap token sedang dalam review</li>
+            <li>• CoinEx: Delisting massal kecil-kecilan minggu lalu</li>
+            <li>• HTX: Pantau pengumuman resmi minggu ini</li>
+          </ul>
+        </div>
+      `;
+      document.getElementById('news-grid').innerHTML = newsHTML;
+    }
+
+    // Jalankan
+    window.onload = () => {
+      getVolume();
+      loadNews();
+      
+      // Refresh volume setiap 5 menit
+      setInterval(getVolume, 300000);
+    };
+  </script>
+</body>
+</html>
